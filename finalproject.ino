@@ -60,8 +60,19 @@ int water_level = 0;
 char water_print_buffer[128];
 
 
+//CLOCK GLOBALS
+#include <DS3231.h>
+
+DS3231 clock;
+RTCDateTime dt;
+
+
 //STATE GLOBAL
-char* state = "IDLE";
+int state = 2; 
+//IDLE - 0
+//RUNNING - 1
+//DIABLED - 2
+//ERROR - 3
 
 
 //ARDUINO MAIN FUNCTIONS
@@ -73,13 +84,17 @@ void setup() {
   vent.attach(vent_motor_pin); //Servo pin initializatio  
 
   Serial.begin(9600);
+  
+  clock.begin();
+  clock.setDateTime(__DATE__, __TIME__); //Set start time of clock
 }
 
 void loop() {
   //Move Vent
   poll_vent();
  
-  if (state != "DISABLED") {
+  
+  if (state != 2) { //state != DISABLED
     //Get Temperature(F) and Humidity
     dht_sensor.measure(&temperature, &humidity);
     temperature = convertTemperature(temperature);
@@ -101,41 +116,53 @@ void loop() {
      digitalWrite (4, HIGH); // blue led on
    }
    */
-  
   }
- 
- 
+  
  
  switch (state) {
-   case "IDLE":
-   //print humidity/ temp lcd
-   //print water level serial
-   //light green led
+   case 0: //IDLE
+     print_temp_humidity_lcd();
+     print_water_level_serial();
+     //light green led
+     //motor off
      break;
-   case "RUNNING":
-   //print humidity/temp lcd
-   //print water level serial
-   //light blue led
-   //motor on
+   case 1: //RUNNING
+     print_temp_humidity_lcd();
+     print_water_level_serial();
+     //light blue led
+     //motor on
      break;
-   case "DISABLED":
-   //light yellow led
-   //no prints
+   case 2: //DISABLED
+     //light yellow led
+     //motor off
      break;
-   case "ERROR":
-   //print water error lcd
-   //print water level serial
-   //light red led
-   //motor off
+   case 3: //ERROR
+     print_water_error_lcd();
+     print_water_level_serial();
+     //light red led
+     //motor off
      break;
    default:
      Serial.print("Error, unknown state");
+     state = 2; //DISABLED
      break;
  }
 }
 
 
 //PRINT FUNCTIONS
+void print_timestamp_serial() {
+  dt = clock.getDateTime();
+
+  Serial.println("Motor Change: ");
+  Serial.print(dt.year);   Serial.print("-");
+  Serial.print(dt.month);  Serial.print("-");
+  Serial.print(dt.day);    Serial.print(" ");
+  Serial.print(dt.hour);   Serial.print(":");
+  Serial.print(dt.minute); Serial.print(":");
+  Serial.print(dt.second); Serial.println("");
+}
+
 void print_water_error_lcd() {
   lcd.setCursor (0, 0);
   lcd.clear();
