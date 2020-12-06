@@ -5,24 +5,18 @@
 */
 
 
-//TODO ADD MOTOR AND LED PINS
-/*
-static const int    red_led = 
-static const int yellow_led = 
-static const int  green_led = 
-static const int   blue_led = 
+//LED AND MOTOR PINS
+static const int    red_led = 25;
+static const int yellow_led = 27;
+static const int  green_led = 24;
+static const int   blue_led = 26;
 
-static const int  motor_pin = 
-*/
+static const int  motor_pin = 5;
 
 
-//TODO ADD STOP BUTTON PIN TO ANALOG PINS, NOT DIGITAL
-/*
+//STOP BUTTON GLOBALS
 static const int stop_button_pin = A2;
 int stop_button_channel = stop_button_pin - 54; //only on ATmega2560 
-*/
-
-//TODO MAKE REAL TIME CLOCK
 
 
 //LCD GLOBALS
@@ -93,6 +87,12 @@ void loop() {
   //Move Vent
   poll_vent();
  
+  //Check for stop button pushes
+  int c = adc_read(stop_button_channel); 
+  if (c > 500) {
+    state = 2; //DISABLED
+  }
+  
   
   if (state != 2) { //state != DISABLED
     //Get Temperature(F) and Humidity
@@ -101,46 +101,46 @@ void loop() {
  
     //Get Water Level
     int water_level = adc_read(water_sensor_channel);
-  
-    //TODO ADD STOP BUTTON HERE
 
    //TODO ADD STATE LOGIC HERE
-   //Print timestamp of state changes
+   //Print timestamp of motor changes
    /*
    if (water_level < 100) {
-     digitalWrite (5, HIGH); // turn on red LED
-     digitalWrite (4, LOW);// turn off blue light
+     state = 
    }
    else {
-     digitalWrite (5, LOW); // turn off red LED
-     digitalWrite (4, HIGH); // blue led on
+     state = 
    }
    */
   }
   
+  digitalWrite(green_led, LOW);
+  digitalWrite(yellow_led, LOW);
+  digitalWrite(red_led, LOW);
+  digitalWrite(blue_led, LOW);
  
  switch (state) {
    case 0: //IDLE
      print_temp_humidity_lcd();
      print_water_level_serial();
-     //light green led
-     //motor off
+     digitalWrite(green_led, HIGH);
+     digitalWrite(motor_pin, LOW);
      break;
    case 1: //RUNNING
      print_temp_humidity_lcd();
      print_water_level_serial();
-     //light blue led
-     //motor on
+     digitalWrite(blue_led, HIGH);
+     digitalWrite(motor_pin, HIGH);
      break;
    case 2: //DISABLED
-     //light yellow led
-     //motor off
+     digitalWrite(yellow_led, HIGH);
+     digitalWrite(motor_pin, LOW);
      break;
    case 3: //ERROR
      print_water_error_lcd();
      print_water_level_serial();
-     //light red led
-     //motor off
+     digitalWrite(red_led, HIGH);
+     digitalWrite(motor_pin, LOW);
      break;
    default:
      Serial.print("Error, unknown state");
