@@ -71,6 +71,13 @@ int state = 2;
 
 //ARDUINO MAIN FUNCTIONS
 void setup() {
+  
+  pinMode(green_led, OUTPUT);
+  pinMode(yellow_led, OUTPUT);
+  pinMode(red_led, OUTPUT);
+  pinMode(blue_led, OUTPUT);
+  pinMode(motor_pin, OUTPUT);
+  
   lcd.begin (16, 2); //(Columns, Rows)
 
   adc_init(); //Enable Analog to Digital Read
