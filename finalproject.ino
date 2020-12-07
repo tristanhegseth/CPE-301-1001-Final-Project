@@ -62,7 +62,7 @@ RTCDateTime dt;
 
 
 //STATE GLOBAL
-int state = 2; 
+int state = 0; 
 //IDLE - 0
 //RUNNING - 1
 //DIABLED - 2
@@ -77,6 +77,9 @@ void setup() {
   pinMode(red_led, OUTPUT);
   pinMode(blue_led, OUTPUT);
   pinMode(motor_pin, OUTPUT);
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
+  pinMode(A2, INPUT);
   
   lcd.begin (16, 2); //(Columns, Rows)
 
@@ -100,25 +103,11 @@ void loop() {
     state = 2; //DISABLED
   }
   
-  
   if (state != 2) { //state != DISABLED
     //Get Temperature(F) and Humidity
     dht_sensor.measure(&temperature, &humidity);
-    temperature = convertTemperature(temperature);
- 
     //Get Water Level
-    int water_level = adc_read(water_sensor_channel);
-
-   //TODO ADD STATE LOGIC HERE
-   //Print timestamp of motor changes
-   /*
-   if (water_level < 100) {
-     state = 
-   }
-   else {
-     state = 
-   }
-   */
+    water_level = adc_read(water_sensor_channel);
   }
   
   digitalWrite(green_led, LOW);
@@ -133,30 +122,30 @@ void loop() {
      digitalWrite(green_led, HIGH);
      digitalWrite(motor_pin, LOW);
      
-      if (temerature > 75){
-      state= 1;
-          if (water_level < 100 ){
-        state = 3;
-        
-          }
+     if ((temperature * 1.8 + 32) > 75){
+       state= 1;
+       print_timestamp_serial();
+       Serial.println("Motor on");
      }
-     
-     
+     if (water_level < 100){
+       state = 3;
+     }
      break;
    case 1: //RUNNING
      print_temp_humidity_lcd();
      print_water_level_serial();
      digitalWrite(blue_led, HIGH);
      digitalWrite(motor_pin, HIGH);
-      if(temperature < 67){
-      state = 0;
-      if(water_level < 100){
-      state = 3;
-      }
-      }
-
-     
-     
+     if((temperature * 1.8 + 32) < 67){
+       state = 0; 
+       print_timestamp_serial();
+       Serial.println("Motor off");
+     }
+     if(water_level < 100){
+       state = 3;
+       print_timestamp_serial();
+       Serial.println("Motor off");
+     }
      break;
    case 2: //DISABLED
      digitalWrite(yellow_led, HIGH);
@@ -168,20 +157,9 @@ void loop() {
      digitalWrite(red_led, HIGH);
      digitalWrite(motor_pin, LOW);
      
-      if (water_level >100){
-      state =0;
-     else
-      lcd.setCursor (0, 0);
-      lcd.clear ();
-      lcd.setCursor (1,0);
-      lcd.write("Water level is");
-      lcd.setCursor(5,1);
-      lcd.write("low!");
-       
+     if (water_level > 100){
+       state = 0;
      }
-     
-     
-     
      break;
    default:
      Serial.print("Error, unknown state");
@@ -217,7 +195,7 @@ void print_temp_humidity_lcd() {
   lcd.setCursor (0, 0);
   lcd.clear ();
   lcd.write("Temp:  ");
-  lcd.print(temperature);
+  lcd.print(temperature * 1.8 + 32);
   lcd.write("F  ");
   lcd.setCursor (0, 1);
   lcd.write("Humidity: ");
@@ -226,24 +204,19 @@ void print_temp_humidity_lcd() {
 }
 
 void print_water_level_serial() {
-  sprintf(water_print_buffer, "Water level is %d\n", water_level);
-  Serial.print(water_print_buffer);
+  Serial.print("W=");
+  Serial.println(water_level, 1);
 }
 
 void print_temp_humidity_serial() {
   Serial.print("T = ");
-  Serial.print(temperature, 1);
-  Serial.print(" deg. F, H = ");
-  Serial.print(humidity, 1);
-  Serial.println("%");
+  Serial.print(temperature * 1.8 + 32, 1);
+  Serial.print(", H = ");
+  Serial.println(humidity, 1);
 }
 
 
 //MISCELLANEOUS FUNCTIONS
-float convertTemperature(float c) {
-  return ((c * 1.8f) + 32.f); //Celcius to F conversion, C * 9/5 + 32
-}
-
 void poll_vent() {
   vent_input_data = adc_read(vent_control_channel); //read from ADC channel
   vent_angle = vent_input_data * 0.18f; //Input ranges [0, 1000] -> Servo ranges [0, 180] conversion
