@@ -132,12 +132,31 @@ void loop() {
      print_water_level_serial();
      digitalWrite(green_led, HIGH);
      digitalWrite(motor_pin, LOW);
+     
+      if (temerature > 75){
+      state= 1;
+          if (water_level < 100 ){
+        state = 3;
+        
+          }
+     }
+     
+     
      break;
    case 1: //RUNNING
      print_temp_humidity_lcd();
      print_water_level_serial();
      digitalWrite(blue_led, HIGH);
      digitalWrite(motor_pin, HIGH);
+      if(temperature < 67){
+      state = 0;
+      if(water_level < 100){
+      state = 3;
+      }
+      }
+
+     
+     
      break;
    case 2: //DISABLED
      digitalWrite(yellow_led, HIGH);
@@ -148,6 +167,21 @@ void loop() {
      print_water_level_serial();
      digitalWrite(red_led, HIGH);
      digitalWrite(motor_pin, LOW);
+     
+      if (water_level >100){
+      state =0;
+     else
+      lcd.setCursor (0, 0);
+      lcd.clear ();
+      lcd.setCursor (1,0);
+      lcd.write("Water level is");
+      lcd.setCursor(5,1);
+      lcd.write("low!");
+       
+     }
+     
+     
+     
      break;
    default:
      Serial.print("Error, unknown state");
